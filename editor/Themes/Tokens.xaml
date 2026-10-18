@@ -1,0 +1,14 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="CanvasBrush" Color="#101419"/>
+  <SolidColorBrush x:Key="PanelBrush" Color="#181E25"/>
+  <SolidColorBrush x:Key="RaisedBrush" Color="#232C36"/>
+  <SolidColorBrush x:Key="HoverBrush" Color="#2D3946"/>
+  <SolidColorBrush x:Key="BorderBrush" Color="#303C49"/>
+  <SolidColorBrush x:Key="TextBrush" Color="#E7EDF4"/>
+  <SolidColorBrush x:Key="MutedBrush" Color="#93A4B6"/>
+  <SolidColorBrush x:Key="AccentBrush" Color="#69D8C3"/>
+  <SolidColorBrush x:Key="AccentSurfaceBrush" Color="#183F3C"/>
+  <FontFamily x:Key="UiFont">Segoe UI</FontFamily>
+  <FontFamily x:Key="MonoFont">Consolas</FontFamily>
+  <CornerRadius x:Key="ControlRadius">5</CornerRadius>
+</ResourceDictionary>

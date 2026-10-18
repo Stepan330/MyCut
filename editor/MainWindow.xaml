@@ -1,0 +1,125 @@
+<Window x:Class="MyCut.Editor.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:MyCut.Editor.Views" xmlns:controls="clr-namespace:MyCut.Editor.Controls"
+        Title="{Binding Title}" Width="1440" Height="900" MinWidth="1080" MinHeight="700"
+        Background="{DynamicResource CanvasBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource UiFont}" FontSize="12"
+        WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop" Closing="OnClosing" PreviewKeyDown="OnKeyDown">
+  <Window.InputBindings>
+    <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewCommand}"/>
+    <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCommand}"/><KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenCommand}"/>
+    <KeyBinding Key="I" Modifiers="Control" Command="{Binding ImportCommand}"/><KeyBinding Key="D" Modifiers="Control" Command="{Binding DuplicateCommand}"/>
+    <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/><KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
+  </Window.InputBindings>
+  <AdornerDecorator><controls:SpatialWorkspace x:Name="SpaceView"><Grid Background="{DynamicResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="38"/><RowDefinition/><RowDefinition Height="24"/></Grid.RowDefinitions>
+    <Border x:Name="TopBar" Grid.Row="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid Margin="8,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <Button x:Name="ProjectIcon" Margin="0,0,16,0" Padding="9,4" Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" ToolTip="Project menu · New, Open, Save, Import, Export">
+          <StackPanel Orientation="Horizontal"><TextBlock Text="MyCut" FontSize="19" FontWeight="Bold"/><TextBlock Text="⌄" Foreground="{DynamicResource MutedBrush}" Margin="8,0,0,0"/></StackPanel>
+        </Button>
+        <controls:ElasticControlPanel x:Name="ModeTabs" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="3">
+          <Button Click="OnPhoto" Padding="9,5" Margin="0" ToolTip="Photo / Image editor" AutomationProperties.Name="Photo workspace"><controls:EditorIcon Glyph="photo"/><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding PhotoMode}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+          <Button Click="OnItem" Padding="9,5" Margin="0" ToolTip="Item editor · geometry and definition" AutomationProperties.Name="Item workspace"><controls:EditorIcon Glyph="item"/><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding ItemMode}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+          <Button Click="OnVideo" Padding="9,5" Margin="0" ToolTip="Video · timeline and program preview" AutomationProperties.Name="Video workspace"><controls:EditorIcon Glyph="play"/><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding VideoMode}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+          <Button Click="OnColor" Padding="9,5" Margin="0" ToolTip="Color editor" AutomationProperties.Name="Color workspace"><controls:EditorIcon Glyph="color"/><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding ColorMode}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+          <Button Click="OnGraph" Padding="9,5" Margin="0" ToolTip="Node graph · live preview" AutomationProperties.Name="Graph workspace"><controls:EditorIcon Glyph="graph"/><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding GraphMode}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+          <Button IsEnabled="False" Padding="9,5" Margin="0" ToolTip="Animator · keyframe curves are not implemented yet" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="Animator unavailable"><controls:EditorIcon Glyph="animation"/></Button>
+          <Button IsEnabled="False" Padding="9,5" Margin="0" ToolTip="Audio editor · not implemented yet" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="Audio unavailable"><controls:EditorIcon Glyph="audio"/></Button>
+        </controls:ElasticControlPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal"><TextBlock Text="{Binding DocumentName}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="160" FontSize="10" Margin="8,0"/><Button x:Name="SpatialViewButton" Click="OnSpatialView" Padding="6,2" MinHeight="26" ToolTip="Spatial UI · F6 overview · Alt + right drag to orbit · Alt + wheel distance · F7 front"><StackPanel Orientation="Horizontal"><controls:EditorIcon Glyph="item" Width="15" Height="15"/><TextBlock Text="3D UI" FontSize="10" Margin="4,0,0,0"/></StackPanel></Button></StackPanel>
+      </Grid>
+    </Border>
+    <Grid x:Name="WorkArea" Grid.Row="1" Margin="12,0,12,8">
+      <Grid.RowDefinitions><RowDefinition/><RowDefinition x:Name="DockDividerRow" Height="0"/><RowDefinition x:Name="TimelineDockRow" Height="0"/></Grid.RowDefinitions>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="6"/>
+        <ColumnDefinition Width="*" MinWidth="300"/><ColumnDefinition x:Name="SideDivider" Width="6"/><ColumnDefinition x:Name="RightPanel" Width="300" MinWidth="0" MaxWidth="720"/></Grid.ColumnDefinitions>
+      <Grid x:Name="SceneRail" Grid.RowSpan="3" Background="{DynamicResource PanelBrush}">
+        <Button x:Name="SceneIcon" Width="36" Height="42" VerticalAlignment="Top" Margin="4,10,4,0" Padding="8" ToolTip="Scene items · hover to peek, click to pin">
+          <StackPanel><Border Width="16" Height="3" Background="{DynamicResource AccentBrush}" Margin="0,1"/>
+            <Border Width="16" Height="3" Background="{DynamicResource MutedBrush}" Margin="0,2"/><Border Width="16" Height="3" Background="{DynamicResource MutedBrush}" Margin="0,1"/>
+          </StackPanel>
+        </Button>
+        <ScrollViewer Margin="4,60,4,56" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="{Binding PhotoMode, Converter={StaticResource BoolToVisibility}}"><ItemsControl ItemsSource="{Binding PhotoTools}" VerticalAlignment="Top">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><controls:ElasticControlPanel Orientation="Vertical" Spacing="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate><DataTemplate><Button Command="{Binding Command}" ToolTip="{Binding Name}" Margin="0" Padding="7" MinWidth="32" MinHeight="32">
+            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsActive}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+            <Viewbox Width="18" Height="18"><Grid Width="24" Height="24"><Path Data="{Binding Icon}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Grid></Viewbox>
+          </Button></DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl></ScrollViewer>
+        <Grid VerticalAlignment="Bottom" Height="50" Visibility="{Binding PhotoMode, Converter={StaticResource BoolToVisibility}}" ToolTip="Foreground / secondary colors · edit hex colors in the tool options">
+          <Border Width="23" Height="23" Margin="10,12,0,0" BorderBrush="{DynamicResource TextBrush}" BorderThickness="1" Background="{Binding ToolSecondColor}"/>
+          <Border Width="23" Height="23" Margin="-7,-8,0,0" BorderBrush="{DynamicResource TextBrush}" BorderThickness="1" Background="{Binding ToolColor}"/>
+        </Grid>
+      </Grid>
+      <Grid Grid.Column="2" Background="{DynamicResource PanelBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="24"/></Grid.RowDefinitions>
+        <DockPanel x:Name="TopOptionsBar"><controls:ElasticControlPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="4,6">
+            <Button x:Name="UndoIconButton" Command="{Binding UndoCommand}" ToolTip="Undo · Ctrl+Z" Padding="7" Margin="0"/>
+            <Button x:Name="RedoIconButton" Command="{Binding RedoCommand}" ToolTip="Redo · Ctrl+Y" Padding="7" Margin="0"/>
+            <Button x:Name="ContentIconButton" Click="OnEditContent" IsEnabled="{Binding HasSelection}" ToolTip="Advanced layer content" Padding="7" Margin="0"/>
+          </controls:ElasticControlPanel><Border x:Name="PhotoOptionsHost" Visibility="{Binding PhotoMode, Converter={StaticResource BoolToVisibility}}"/>
+        </DockPanel>
+        <Border x:Name="ViewportContainer" Grid.Row="1" Margin="3,0" Background="{DynamicResource CanvasBrush}"/>
+        <DockPanel Grid.Row="2" Margin="12,0"><TextBlock Text="{Binding ViewportHint}" FontSize="10" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+      </Grid>
+      <Grid x:Name="TimelineDock" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Visibility="{Binding VideoMode, Converter={StaticResource BoolToVisibility}}" Background="{DynamicResource PanelBrush}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+        <DockPanel Margin="6,3,6,3" LastChildFill="True"><controls:ElasticControlPanel DockPanel.Dock="Left" Spacing="3">
+          <Button Click="OnVideoDetails" ToolTip="Media / clip controls" Padding="8,5"><controls:EditorIcon Glyph="settings"/></Button>
+          <Button Command="{Binding ImportMediaCommand}" ToolTip="Import media" Padding="8,5"><controls:EditorIcon Glyph="import"/></Button>
+          <Button Command="{Binding InsertClipCommand}" ToolTip="Insert at playhead" Padding="8,5"><controls:EditorIcon Glyph="insert"/></Button>
+          <Button Command="{Binding AddTrackCommand}" ToolTip="Add track" Padding="8,5"><controls:EditorIcon Glyph="add"/></Button>
+          <Button Command="{Binding MarkInCommand}" ToolTip="Set In · I" Padding="8,5"><controls:EditorIcon Glyph="range-in"/></Button>
+          <Button Command="{Binding MarkOutCommand}" ToolTip="Set Out · O" Padding="8,5"><controls:EditorIcon Glyph="range-out"/></Button>
+          </controls:ElasticControlPanel><StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><TextBlock Text="{Binding Timecode}" FontFamily="{DynamicResource MonoFont}" VerticalAlignment="Center" Margin="8,0"/><Button x:Name="VideoInspectorButton" Click="OnToggleVideoInspector" ToolTip="Show / hide item inspector" Padding="7,5"><controls:EditorIcon Glyph="item"/></Button></StackPanel>
+          <controls:ElasticControlPanel HorizontalAlignment="Center" Spacing="3"><Button Click="OnPreviousFrame" ToolTip="Previous frame" Padding="8,5"><controls:EditorIcon Glyph="previous"/></Button><Button Command="{Binding PlayCommand}" ToolTip="Play / pause" Padding="8,5"><controls:EditorIcon Glyph="{Binding PlayIcon}"/></Button><Button Click="OnNextFrame" ToolTip="Next frame" Padding="8,5"><controls:EditorIcon Glyph="next"/></Button></controls:ElasticControlPanel>
+        </DockPanel>
+        <Border x:Name="DockTimelineContainer" Grid.Row="1" Margin="6,0,6,6"/>
+      </Grid>
+      <Border x:Name="ColorDockHost" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Background="{DynamicResource PanelBrush}" Visibility="{Binding ColorMode, Converter={StaticResource BoolToVisibility}}"/>
+      <GridSplitter x:Name="DockSplitter" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
+      <GridSplitter x:Name="SideSplitter" Grid.Column="3" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/><Grid Grid.Column="4"><Border x:Name="ItemInspectorHost"/><Border x:Name="PhotoSidebarHost" Visibility="{Binding PhotoMode, Converter={StaticResource BoolToVisibility}}"/><Border x:Name="GraphSidebarHost" Visibility="{Binding GraphMode, Converter={StaticResource BoolToVisibility}}"/><Border x:Name="ColorInspectorHost" Visibility="{Binding ColorMode, Converter={StaticResource BoolToVisibility}}"/></Grid>
+    </Grid>
+    <controls:SpatialFlyout x:Name="ScenePopup" Placement="Right" HorizontalOffset="5"
+           AllowsTransparency="True" StaysOpen="True" PopupAnimation="None">
+      <AdornerDecorator><Border x:Name="ScenePopupShell" Width="280" Height="{Binding ActualHeight, ElementName=WorkArea}" Padding="1"
+              Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="7">
+        <Grid><Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition/></Grid.RowDefinitions>
+          <DockPanel Margin="14,0"><Button x:Name="ScenePin" Content="Pin" DockPanel.Dock="Right" HorizontalAlignment="Right" Padding="10,4" Margin="0" ToolTip="Keep scene items open"/>
+            <TextBlock Text="SCENE ITEMS" Foreground="{DynamicResource AccentBrush}" FontSize="10"/>
+          </DockPanel>
+          <views:ScenePanel Grid.Row="1"/>
+        </Grid>
+      </Border></AdornerDecorator>
+    </controls:SpatialFlyout>
+    <controls:SpatialFlyout x:Name="ProjectPopup" Placement="Bottom" VerticalOffset="6"
+           AllowsTransparency="True" StaysOpen="True" PopupAnimation="None">
+      <AdornerDecorator><Border x:Name="ProjectPopupShell" Width="284" Padding="12" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="7">
+        <StackPanel>
+          <TextBlock Text="PROJECT" Style="{StaticResource Caption}" Margin="5,1,0,10"/>
+          <Button x:Name="NewProjectButton" Command="{Binding NewCommand}" HorizontalContentAlignment="Stretch" Margin="0,0,0,6">
+            <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+N" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="20,0,0,0"/><TextBlock Text="New project"/></DockPanel>
+          </Button>
+          <Button x:Name="OpenProjectButton" Command="{Binding OpenCommand}" HorizontalContentAlignment="Stretch" Margin="0,0,0,6">
+            <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+O" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="20,0,0,0"/><TextBlock Text="Open project"/></DockPanel>
+          </Button>
+          <Button x:Name="SaveProjectButton" Command="{Binding SaveCommand}" HorizontalContentAlignment="Stretch" Margin="0,0,0,6">
+            <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+S" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="20,0,0,0"/><TextBlock Text="Save project"/></DockPanel>
+          </Button>
+          <Separator Margin="0,5,0,11"/>
+          <Button Command="{Binding ImportCommand}" HorizontalContentAlignment="Stretch" Margin="0,0,0,6">
+            <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+I" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="20,0,0,0"/><TextBlock Text="Import photo"/></DockPanel>
+          </Button>
+          <Button Content="Export PNG" Command="{Binding ExportCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,6"/>
+          <Separator Margin="0,5,0,11"/>
+          <Button x:Name="RestoreDemoButton" Content="Restore demo" Command="{Binding DemoCommand}" Margin="0"/>
+          <Button Content="Workbench example" Command="{Binding WorkbenchCommand}" Margin="0,6,0,0"/>
+          <Button Content="Interface settings / Debug" Click="OnInterfaceSettings" Margin="0,6,0,0"/>
+        </StackPanel>
+      </Border></AdornerDecorator>
+    </controls:SpatialFlyout>
+    <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}">
+      <DockPanel Margin="20,0"><TextBlock DockPanel.Dock="Right" Text="{Binding Metrics}" FontSize="10" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right" Margin="16,0,0,0"/>
+        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" FontSize="11"/>
+      </DockPanel>
+    </Border>
+  </Grid></controls:SpatialWorkspace></AdornerDecorator>
+</Window>

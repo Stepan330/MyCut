@@ -1,0 +1,46 @@
+<UserControl x:Class="MyCut.Editor.Views.InspectorPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:MyCut.Editor.Controls">
+ <ScrollViewer Background="{DynamicResource PanelBrush}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel x:Name="InspectorBody" Margin="10" IsEnabled="{Binding HasSelection}">
+   <TextBlock x:Name="InspectorCaption" Text="INSPECTOR" Style="{StaticResource Caption}"/>
+   <TextBlock Text="{Binding SelectionName}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,0,3"/>
+   <TextBlock x:Name="InspectorIdentity" Text="{Binding InstanceSummary}" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="0,0,0,4"/>
+   <TextBlock x:Name="TransformCaption" Text="Instance transform" FontWeight="SemiBold" Margin="0,0,0,4"/>
+   <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+    <CheckBox Content="Lock layer" IsChecked="{Binding Locked}" Margin="0,2,12,2"/>
+    <CheckBox Content="Visible" ToolTip="Visible in composition" IsChecked="{Binding Visible}" Margin="0,2,0,2"/>
+   </StackPanel>
+   <Expander Header="Transform" IsExpanded="True">
+    <StackPanel IsEnabled="{Binding CanEdit}" Margin="0,4,0,0">
+     <TextBlock x:Name="InspectorHint" Text="Drag a value · click to type" Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="0,0,0,4"/>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="76"/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <TextBlock Text="Position" Foreground="{DynamicResource MutedBrush}" FontSize="11.5"/>
+      <controls:ParameterRow Grid.Column="1" Label="Position X / px" ShortLabel="X" LabelWidth="14" Value="{Binding X}" Minimum="-640" Maximum="1920" Step="1" ClampToRange="False" Margin="0,0,4,0"/>
+      <controls:ParameterRow Grid.Column="2" Label="Position Y / px" ShortLabel="Y" LabelWidth="14" Value="{Binding Y}" Minimum="-360" Maximum="1080" Step="1" ClampToRange="False"/>
+     </Grid>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="76"/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <TextBlock Text="Scale" Foreground="{DynamicResource MutedBrush}" FontSize="11.5"/>
+      <controls:ParameterRow Grid.Column="1" Label="Scale X" ShortLabel="X" LabelWidth="14" Value="{Binding ScaleX}" Minimum="0.01" Maximum="100" Margin="0,0,4,0"/>
+      <controls:ParameterRow Grid.Column="2" Label="Scale Y" ShortLabel="Y" LabelWidth="14" Value="{Binding ScaleY}" Minimum="0.01" Maximum="100"/>
+     </Grid>
+     <controls:ParameterRow Label="Rotation / deg" ShortLabel="Rotation °" LabelWidth="76" Value="{Binding Rotation}" Minimum="-180" Maximum="180" Step="1" ClampToRange="False"/>
+     <controls:ParameterRow Label="Opacity" LabelWidth="76" Value="{Binding Opacity}"/>
+     <Button Content="Reset transform" Command="{Binding ResetTransformCommand}" HorizontalAlignment="Right" MinHeight="24" Padding="6,2" Margin="0,2,0,2"/>
+    </StackPanel>
+   </Expander>
+   <Separator Margin="0,5"/>
+   <Expander Header="Shared definition" IsExpanded="True">
+    <StackPanel Margin="0,4,0,0">
+     <TextBlock Text="{Binding DefinitionName}" TextTrimming="CharacterEllipsis" FontSize="11.5"/>
+     <TextBlock Text="{Binding DefinitionSummary}" Foreground="{DynamicResource AccentBrush}" FontSize="10" Margin="0,1,0,4"/>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <TextBlock Text="Tint" Foreground="{DynamicResource MutedBrush}" FontSize="11.5" ToolTip="Tint updates every linked instance."/>
+      <controls:ParameterRow Grid.Column="1" Label="Tint / red" ShortLabel="R" LabelWidth="14" Value="{Binding Red}" Margin="0,0,3,0"/>
+      <controls:ParameterRow Grid.Column="2" Label="Tint / green" ShortLabel="G" LabelWidth="14" Value="{Binding Green}" Margin="0,0,3,0"/>
+      <controls:ParameterRow Grid.Column="3" Label="Tint / blue" ShortLabel="B" LabelWidth="14" Value="{Binding Blue}"/>
+     </Grid>
+    </StackPanel>
+   </Expander>
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>MyCut</AssemblyName>
+    <Version>0.11.0</Version>
+    <RootNamespace>MyCut.Editor</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.2.3" />
+    <PackageReference Include="Magick.NET-Q16-x64" Version="15.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(NuGetPackageRoot)magick.net-q16-x64/15.0.0/Notice.txt" Link="ThirdParty/Magick.NET-Notice.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(NuGetPackageRoot)pixieditor.colorpicker/3.4.2.3/LICENSE.md" Link="ThirdParty/ColorPicker-LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

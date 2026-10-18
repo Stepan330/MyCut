@@ -1,0 +1,14 @@
+[package]
+name = "mycut-photo-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+base64 = "0.22"
+tempfile = "3"
+imageproc = { version = "0.26", default-features = false }
+ab_glyph = "0.2"

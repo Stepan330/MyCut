@@ -1,0 +1,20 @@
+<UserControl x:Class="MyCut.Editor.Views.ScenePanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:MyCut.Editor.Controls">
+  <Grid Background="{DynamicResource PanelBrush}" Margin="0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="18,20,18,14"><TextBlock Text="COMPOSITION" Style="{StaticResource Caption}"/><TextBlock Text="{Binding LayerListTitle}" Style="{StaticResource PanelTitle}"/>
+      <TextBlock Text="{Binding SceneSummary}" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
+    </StackPanel>
+    <ListBox Grid.Row="1" Margin="10,0" ItemsSource="{Binding LayerItems}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate><DataTemplate><StackPanel>
+        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Text="{Binding Identity}" Foreground="{DynamicResource MutedBrush}" FontFamily="{DynamicResource MonoFont}" FontSize="10" Margin="0,7,0,0"/>
+      </StackPanel></DataTemplate></ListBox.ItemTemplate>
+    </ListBox>
+    <StackPanel Grid.Row="2" Margin="18,12,18,20">
+      <controls:ElasticControlPanel Orientation="Horizontal" Margin="0,0,0,10"><Button Command="{Binding LayerUpCommand}" ToolTip="Move layer up" Padding="8"><controls:EditorIcon Glyph="up"/></Button><Button Command="{Binding LayerDownCommand}" ToolTip="Move layer down" Padding="8"><controls:EditorIcon Glyph="down"/></Button>
+        <Button Command="{Binding DuplicateCommand}" ToolTip="Duplicate · Ctrl+D" Padding="8"><controls:EditorIcon Glyph="duplicate"/></Button><Button Command="{Binding DeleteCommand}" ToolTip="Delete layer" Padding="8"><controls:EditorIcon Glyph="delete"/></Button>
+        <Button Command="{Binding ImportCommand}" ToolTip="Import photo · Ctrl+I" Padding="8"><controls:EditorIcon Glyph="import"/></Button>
+      </controls:ElasticControlPanel>
+      <TextBlock Text="Each source is an Item Definition. Copies share the source and keep independent transforms." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" FontSize="11" LineHeight="18"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

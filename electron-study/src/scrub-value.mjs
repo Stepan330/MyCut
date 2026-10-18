@@ -1,0 +1,2 @@
+export function niceValue(value){const a=Math.abs(value),quantum=a<10?.5:a<100?1:10**(Math.floor(Math.log10(a))-1);return Number((Math.trunc((value+Math.sign(value)*Math.max(1e-6,a*1e-6))/quantum)*quantum).toFixed(6));}
+export function scrubValue(value,dx,step=1,{shiftKey=false,ctrlKey=false,metaKey=false}={},min=-Infinity,max=Infinity,round=false){const next=Number((value+dx*step*(shiftKey?10:ctrlKey||metaKey?.1:1)).toFixed(6));return Math.max(min,Math.min(max,round&&!ctrlKey&&!metaKey?niceValue(next):next));}

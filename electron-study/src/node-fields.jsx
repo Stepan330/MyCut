@@ -1,0 +1,24 @@
+import React,{useState,useEffect} from 'react';
+import {createPortal} from 'react-dom';
+import {graphOperations} from './blend-modes.mjs';
+import {nodeSpec,nodeDefaults} from './generator-nodes.mjs';
+import {ScrubNumber} from './scrub-number.jsx';
+import {expandedEdges,fieldSpec,isParameter} from './parameter-graph.mjs';
+import {PropertyRow} from './property-row.jsx';
+import {ColorRangeEditor} from './color-range-editor.jsx';
+import {GradientEditor} from './gradient-editor.jsx';
+export function NodeFields({owner,node,expanded,locked,change,toggle,sourceValue,begin,finish,cancel,labelPrefix=node.type,hideToggle=false,graph,startParameter}){
+ const [menu,setMenu]=useState(null);
+ useEffect(()=>{if(!menu)return;const close=()=>setMenu(null);window.addEventListener('pointerdown',close);return()=>window.removeEventListener('pointerdown',close);},[menu]);
+ const spec=nodeSpec(node.type),values={...nodeDefaults(node.type),...node.params},parameters=(spec?.parameters??[]).map(p=>{if(!graph||!isParameter(node)||p.type!=='number')return p;const specs=expandedEdges(graph).filter(e=>e.from===node.id).map(e=>fieldSpec(graph.nodes.find(n=>n.id===e.to),e.port)).filter(Boolean);return {...p,min:Math.max(p.min,...specs.map(s=>s.min??-100000)),max:Math.min(p.max,...specs.map(s=>s.max??100000))};});
+ const numeric=(p,label,value,onChange)=><span className={`number-field ${/^(x|x1|x2|sourceX)$/.test(p.id)?'axis-x':/^(y|y1|y2|sourceY)$/.test(p.id)?'axis-y':''}`}><ScrubNumber label={label} value={value} min={p.min} max={p.max} step={p.step} disabled={locked} begin={begin} finish={finish} cancel={cancel} onChange={onChange}/></span>;
+ return <div className="graph-node-fields adaptive-properties" onPointerDown={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()} onContextMenu={e=>{const label=e.target.closest("[data-property]")?.dataset.property,p=parameters.find(p=>p.label===label);if(p&&!locked&&!isParameter(node)){e.preventDefault();e.stopPropagation();setMenu({key:p.id,x:e.clientX,y:e.clientY});}}}>
+  {!isParameter(node)&&<label className="check node-enabled"><input type="checkbox" aria-label={`Enable ${node.id}`} checked={node.enabled!==false} disabled={locked} onChange={e=>change('enabled',e.target.checked)}/>Enabled</label>}
+  {graphOperations.includes(node.type)&&<PropertyRow label="Operation"><select aria-label={`Operation ${node.id}`} value={node.type} disabled={locked} onChange={e=>change('operation',e.target.value)}>{graphOperations.map(v=><option key={v}>{v}</option>)}</select></PropertyRow>}
+  {node.type==='ColorRange'&&<ColorRangeEditor owner={owner} node={node} value={values} disabled={locked} onChange={params=>change('$params',params)}/>}
+  {sourceValue&&<PropertyRow label="Opacity">{numeric({id:'opacity',min:0,max:1,step:.01},`Mask opacity ${node.id}`,sourceValue.opacity??1,v=>change('maskOpacity',v,false))}</PropertyRow>}
+  {parameters.slice(0,expanded?undefined:2).map(p=><PropertyRow key={p.id} label={isParameter(node)?node.label??p.label:p.label} leading={startParameter&&!isParameter(node)?<button className="graph-port graph-input parameter-input" data-graph-node={node.id} data-graph-input={'param:'+p.id} data-connected={graph?.edges.some(e=>e.to===node.id&&e.port==='param:'+p.id)} aria-label={`Parameter input ${node.id} ${p.id}`} onPointerDown={e=>startParameter(e,p.id)} disabled={locked}/>:null}>{p.type==='stops'?<GradientEditor value={values[p.id]} disabled={locked} onChange={v=>change(p.id,v)}/>:p.type==='select'?<select aria-label={labelPrefix==='Node'?`Node ${p.label}`:`${labelPrefix} ${p.label} ${node.id}`} value={values[p.id]} disabled={locked} onChange={e=>change(p.id,e.target.value)}>{p.options.map(v=><option key={v}>{v}</option>)}</select>:p.type==='checkbox'?<input type="checkbox" aria-label={`${labelPrefix} ${p.label} ${node.id}`} checked={!!values[p.id]} disabled={locked} onChange={e=>change(p.id,e.target.checked)}/>:p.type==='number'?numeric(p,labelPrefix==='Node'?`Node ${p.label}`:`${labelPrefix} ${p.label} ${node.id}`,values[p.id],v=>change(p.id,v,false)):<input type={p.type} aria-label={`${labelPrefix} ${p.label} ${node.id}`} disabled={locked} value={values[p.id]} onChange={e=>change(p.id,e.target.value)}/>}</PropertyRow>)}
+  {menu&&createPortal(<div role="menu" aria-label="Parameter actions" className="context-menu parameter-context-menu" style={{left:Math.min(menu.x,innerWidth-230),top:Math.min(menu.y,innerHeight-70)}} onPointerDown={e=>e.stopPropagation()}><button role="menuitem" onClick={()=>{window.dispatchEvent(new CustomEvent('mycut-expose-parameter',{detail:{owner:owner.id,node:node.id,key:menu.key}}));setMenu(null);}}>Convert to Parameter</button></div>,document.body)}
+  {!hideToggle&&parameters.length>2&&<button className="button node-expand" type="button" aria-label={`Expand ${node.id} parameters`} aria-expanded={!!expanded} onClick={toggle}>{expanded?'Fewer parameters':'All parameters'}</button>}
+ </div>;
+}

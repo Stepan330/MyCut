@@ -1,0 +1,20 @@
+{
+  "name": "mycut-electron-study",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated Electron/React UI comparison screen; not a photo editor migration",
+  "main": "main.cjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/build.mjs && electron .",
+    "test": "node --test tests/*.test.mjs",
+    "test:editor": "node scripts/build.mjs && node --test tests/editor-expansion.test.mjs && node tests/editor-expansion-ui.mjs",
+    "test:projects": "node scripts/build.mjs && node --test tests/graph-project.test.mjs && node tests/free-graph-project-ui.mjs",
+    "test:panel-workflow": "node scripts/build.mjs && node tests/panel-graph-workflow-ui.mjs && node tests/gesture-return-ui.mjs",
+    "test:graph-selection": "node scripts/build.mjs && node --test tests/graph-project.test.mjs && node tests/graph-selection-ui.mjs && node tests/sidebar-auto-hide-ui.mjs",
+    "test:gestures": "node scripts/build.mjs && node tests/gesture-tabs-ui.mjs && node tests/arc-tabs-ui.mjs && node tests/gesture-chrome-ui.mjs && node tests/gesture-return-ui.mjs",
+    "test:ui": "node scripts/build.mjs && node tests/ui.mjs && node tests/resize-ui.mjs && node tests/rotate-ui.mjs && node tests/outliner-ui.mjs && node tests/rename-ui.mjs && node tests/clicks-ui.mjs && node tests/parenting-ui.mjs && node tests/inheritance-ui.mjs && node tests/tools-ui.mjs && node tests/scrub-bounds-ui.mjs && node tests/workflow-ui.mjs && node tests/commands-ui.mjs && node tests/brush-ui.mjs && node tests/layout-ui.mjs && node tests/panels-ui.mjs && node tests/docking-ui.mjs && node tests/split-docking-ui.mjs && node tests/tool-settings-ui.mjs && node tests/gesture-tabs-ui.mjs"
+  },
+  "dependencies": { "react": "19.3.1", "react-dom": "19.3.1" },
+  "devDependencies": { "electron": "44.8.0", "esbuild": "0.28.2", "playwright": "1.62.1" }
+}

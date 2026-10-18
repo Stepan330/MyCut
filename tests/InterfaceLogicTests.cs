@@ -1,0 +1,18 @@
+using MyCut.Editor.Services;
+static void Check(bool value,string message){if(!value)throw new InvalidOperationException(message);}
+double now=0;var memory=new ZoneExpansionMemory(()=>now);var key=new object();Check(memory.Update(key,44)==44,"Zone did not expand immediately");
+now=.01;Check(memory.Update(key,0)==44,"Zone collapsed on stop");now=.26;double middle=memory.Update(key,0);Check(middle>20&&middle<24,"Zone must shrink gradually over half a second");now=.52;Check(memory.Update(key,0)==0,"Zone failed to finish its half-second release");
+now=.6;Check(memory.Update(key,30)==30,"Zone failed to reacquire");now=.61;memory.Update(key,0);now=.7;double old=memory.Update(key,0);Check(memory.Update(key,38)==38&&old<30,"Reversal failed to grow from the current radius");
+now=10;Check(memory.Update(key,0)==0,"Hidden targets retained a stale radius");
+double[] natural=[70,100,50],neutral=[0,0,0],focused=[0,1,0];var normal=ElasticLayout.Allocate(natural,neutral,.3,220,24);Check(normal.Zip(natural).All(p=>Math.Abs(p.First-p.Second)<.01),"Idle elastic layout changed natural button sizes");
+var grown=ElasticLayout.Allocate(natural,focused,.3,220,24);Check(grown[1]>natural[1]&&grown[0]<natural[0]&&grown[2]<natural[2],"Focused button did not borrow size from neighbours");Check(Math.Abs(grown.Sum()-220)<.001&&Math.Abs(grown[0]-normal[0])>1,"Elastic layout did not move neighbouring positions while conserving the strip");
+var small=ElasticLayout.Allocate(natural,focused,.3,60,24);Check(Math.Abs(small.Sum()-60)<.001&&small.All(v=>v>=20),"Narrow elastic panel overflowed its available extent");
+double near=AdaptiveZoneLaw.Expansion(1000,10,.04,160,260,44),far=AdaptiveZoneLaw.Expansion(1000,80,.04,160,260,44);
+Check(near>far&&far>0,"Distance did not emphasize nearby controls");Check(AdaptiveZoneLaw.Expansion(1500,10,.04,160,260,44)>near,"Mouse speed did not increase the radius");Check(AdaptiveZoneLaw.Expansion(1000,10,.08,160,260,96)>near,"Speed coefficient did not multiply the radius");
+Check(AdaptiveZoneLaw.Expansion(100000,0,.04,160,260,44)==44,"Expansion ignored its safety cap");Check(AdaptiveZoneLaw.Expansion(1000,160,.04,160,260,44)==0&&AdaptiveZoneLaw.Expansion(200,0,.04,160,260,44)==0&&AdaptiveZoneLaw.Expansion(1000,0,0,160,260,44)==0,"Influence / threshold / zero coefficient guard failed");
+double rateTime=0;var rateMemory=new ZoneExpansionMemory(()=>rateTime);var first=new object();var second=new object();Check(rateMemory.UpdateWithRate(first,44,88)==44,"Rate zone did not grow immediately");rateMemory.UpdateWithRate(second,10,88);
+rateTime=.1;Check(Math.Abs(rateMemory.UpdateWithRate(first,0,88)-35.2)<1e-8,"Zone decay did not obey DIP/s rate");Check(Math.Abs(rateMemory.UpdateWithRate(second,0,88)-1.2)<1e-8,"Zones did not maintain independent inertia");
+for(int n=1;n<=40;++n){rateTime=.1+n*.01;rateMemory.UpdateWithRate(first,Math.Max(0,10-n*.25),88);}Check(rateMemory.UpdateWithRate(first,0,88)<1e-7,"Moving target repeatedly restarted decay instead of allowing stable convergence");
+rateMemory.Clear();rateTime=0;rateMemory.UpdateWithRate(first,44,44);rateTime=.5;Check(rateMemory.UpdateWithRate(first,0,44)==22,"Slower release parameter did not retain a large zone");Check(rateMemory.UpdateWithRate(first,60,44)==60,"New fast motion failed to grow a decaying zone immediately");
+rateTime=10;Check(rateMemory.UpdateWithRate(first,0,44)==0,"Unseen zone did not lose inertia according to elapsed time");
+Console.WriteLine("PASS: speed × coefficient × proximity; expansion cap / threshold; independent constant-rate shrink; no decay restart under high-frequency retargeting; slow release / instant reacquisition; legacy handle inertia; neighbour reflow");

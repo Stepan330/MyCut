@@ -1,0 +1,22 @@
+import {_electron as electron} from 'playwright';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(fileURLToPath(new URL('../',import.meta.url))),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+const app=await electron.launch({args:[root],env}),page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+const settle=()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+const pixel=()=>page.locator('.artboard>svg').evaluate(async svg=>{const clone=svg.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width','960');clone.setAttribute('height','600');clone.querySelectorAll('.transform-overlay,.selection').forEach(n=>n.remove());const image=new Image();image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));await image.decode();const c=document.createElement('canvas');c.width=960;c.height=600;const ctx=c.getContext('2d');ctx.drawImage(image,0,0);return [...ctx.getImageData(500,200,1,1).data];});
+const closeColor=(actual,expected)=>expected.forEach((v,i)=>assert.ok(Math.abs(actual[i]-v)<4,`channel ${i}: ${actual} expected ${expected}`));
+try{
+  await page.locator('.statusbar').waitFor();
+  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});dialog.showMessageBox=async()=>({response:1});},path.join(root,'tests/fixtures/blend.mycutproject'));await page.keyboard.press('Control+o');await page.waitForFunction(()=>document.querySelector('.statusbar').textContent.includes('Opened blend.mycutproject'));await page.locator('[data-layer-id=owner] .tree-label').click();await page.getByRole('button',{name:'Effects Graph',exact:true}).click();await page.getByRole('button',{name:'Graph Add',exact:true}).click();
+  assert.equal(await page.getByLabel('Selected node parameters',{exact:true}).count(),1);assert.equal(await page.getByLabel('Scale X',{exact:true}).count(),0,'operation selection replaces object transform inspector');const wires=await page.locator('.graph-connections path').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('aria-label')));
+  closeColor(await pixel(),[64,128,192,255]);
+  for(const [type,expected] of [['Multiply',[32,32,24,255]],['Divide',[255,128,43,255]],['Screen',[160,160,200,255]],['Difference',[64,64,160,255]]]){
+    await page.getByRole('radio',{name:type,exact:true}).click();await settle();assert.equal(await page.getByRole('button',{name:'Graph '+type,exact:true}).getAttribute('aria-pressed'),'true');closeColor(await pixel(),expected);assert.deepEqual(await page.locator('.graph-connections path').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('aria-label'))),wires);
+  }
+  await page.getByRole('radio',{name:'Subtract',exact:true}).click();await settle();closeColor(await pixel(),[22,22,22,255]);await page.getByRole('button',{name:'Undo',exact:true}).click();await settle();assert.equal(await page.getByRole('radio',{name:'Difference',exact:true}).getAttribute('aria-checked'),'true','Undo restores canonical selected node type');
+  await page.getByRole('button',{name:'Graph NodeInput 1',exact:true}).click();await page.getByLabel('Signal operation',{exact:true}).selectOption('Multiply');await settle();assert.equal(await page.getByRole('button',{name:'Graph Multiply',exact:true}).count(),1,'source operation synchronizes saved graph node');
+  await page.locator('.dock-floating').filter({has:page.locator('[data-dock-tab=effects-graph]')}).getByRole('button',{name:'Return panel to sidebar',exact:true}).click();const p=await page.locator('.artboard>svg').evaluate(el=>{const p=new DOMPoint(500,200).matrixTransform(el.getScreenCTM());return {x:p.x,y:p.y};});await page.mouse.click(p.x,p.y);await settle();assert.equal(await page.getByRole('button',{name:'Shapes tool',exact:true}).getAttribute('aria-pressed'),'true','single canvas click enters shape edit');assert.equal(await page.getByLabel('Tool Mode',{exact:true}).inputValue(),'Edit');assert.deepEqual(errors,[]);
+  console.log('Node operations UI passed: canonical node Details, one-click operation replacement with identical wires, pixel-verified Multiply/Divide/Screen/Difference/Subtract, Undo, NodeInput synchronization and single-click shape edit.');
+}finally{await app.close();}

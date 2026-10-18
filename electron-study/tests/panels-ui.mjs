@@ -1,0 +1,24 @@
+import {_electron as electron} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(fileURLToPath(new URL('../',import.meta.url))),results=process.env.MYCUT_UI_RESULTS||path.join(root,'test-results/panels');await mkdir(results,{recursive:true});
+const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+const app=await electron.launch({args:[root],env}),page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+const settle=()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+const at=(x,y)=>page.locator('.artboard>svg').evaluate((el,p)=>{const q=new DOMPoint(p.x,p.y).matrixTransform(el.getScreenCTM());return {x:q.x,y:q.y};},{x,y});
+async function drag(a,b){await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:8});await page.mouse.up();await settle();}
+try{
+  await page.getByRole('button',{name:'Brush tool',exact:true}).click();const p=await at(400,100),a=await at(80,400),b=await at(180,430);
+  await page.mouse.click(p.x,p.y,{button:'right'});const panel=page.getByRole('dialog',{name:'Brush settings',exact:true});await panel.waitFor();assert.equal(await panel.getAttribute('aria-modal'),'false');assert.equal(await page.locator('.modal-backdrop').count(),0);
+  assert.equal(await panel.getByRole('tab',{name:'Advanced',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Advanced settings',exact:true}).getAttribute('aria-expanded'),'false');await page.getByRole('button',{name:'Advanced settings',exact:true}).click();await page.getByLabel('Tool Flow',{exact:true}).fill('0.6');
+  await drag(a,b);assert.equal(await panel.count(),0);assert.equal(await page.locator('[data-paint-stroke]').count(),0,'first outside gesture cannot paint');
+  await drag(a,b);assert.equal(await page.locator('[data-paint-stroke]').count(),1,'next gesture paints normally');
+  await page.mouse.click(p.x,p.y,{button:'right'});await panel.waitFor();await page.getByRole('button',{name:'Advanced settings',exact:true}).click();assert.equal(await page.getByLabel('Tool Flow',{exact:true}).inputValue(),'0.6');await page.getByRole('button',{name:'Pin tool settings',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Pin tool settings',exact:true}).getAttribute('aria-pressed'),'true');
+  const before=await panel.boundingBox(),header=await panel.locator('[data-dock-tab="tool-settings"]').boundingBox();await drag({x:header.x+25,y:header.y+10},{x:header.x+85,y:header.y+45});const after=await panel.boundingBox();assert.ok(Math.abs(after.x-before.x-60)<3);assert.ok(Math.abs(after.y-before.y-35)<3);
+  await drag(a,b);assert.equal(await panel.count(),1);assert.equal(await page.locator('[data-paint-stroke]').count(),2,'pinned panel allows painting');await page.screenshot({path:path.join(results,'pinned-tool-panel.png')});
+  await page.getByRole('button',{name:'Pin tool settings',exact:true}).click();await page.getByRole('button',{name:'Selection tool',exact:true}).click();assert.equal(await panel.count(),0);assert.equal(await page.getByRole('button',{name:'Brush tool',exact:true}).getAttribute('aria-pressed'),'true','dismissal click does not activate underlying control');await page.getByRole('button',{name:'Selection tool',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Selection tool',exact:true}).getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:'Group sidebar tabs',exact:true}).click();const tabs=page.getByRole('tablist',{name:'Sidebar panels',exact:true});await tabs.waitFor();await page.getByLabel('Search objects',{exact:true}).fill('Studio');await tabs.getByRole('tab',{name:'Details',exact:true}).click();await tabs.getByRole('tab',{name:'Outliner',exact:true}).click();assert.equal(await page.getByLabel('Search objects',{exact:true}).inputValue(),'Studio');await tabs.getByRole('tab',{name:'Outliner',exact:true}).press('ArrowRight');assert.equal(await tabs.getByRole('tab',{name:'Details',exact:true}).getAttribute('aria-selected'),'true');await page.screenshot({path:path.join(results,'grouped-sidebar-tabs.png')});await page.locator('.sidebar').getByRole('button',{name:'Panel group settings',exact:true}).click();await page.getByRole('menuitem',{name:'Split vertically',exact:true}).click();assert.equal(await tabs.count(),2);assert.equal(await page.getByRole('separator',{name:'Resize Outliner height',exact:true}).count(),1);
+  assert.deepEqual(errors,[]);console.log('Panels UI passed: right-click popup, no backdrop, dismiss gesture swallowed, next gesture paints, pin/nonmodal paint, title drag, underlying click guard, stateful tabs/keyboard and split.');
+}finally{await app.close();}
