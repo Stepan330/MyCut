@@ -46,7 +46,7 @@ export function addObjectEffect(owner,presetId){
  const composite=['shadow','glow'].includes(presetId);
  const recipe=composite?[['ConvertToAlphaMask',{}],['SolidColor',{color:presetId==='shadow'?'#000000':'#39c9ed'}],['AlphaMultiply',{}],['Blur',{radius:12}],['Offset',{x:presetId==='shadow'?10:0,y:presetId==='shadow'?10:0}],['Opacity',{amount:.65}],['Add',{}]]:preset.nodes;
  const nodes=recipe.map(([type,params])=>({id:crypto.randomUUID(),type,params,x:0,y:0}));
- let previous=graph.edges.find(e=>e.to==='output'&&e.port==='base')?.from??'input',edges=graph.edges.filter(e=>e.to!=='output');
+ let previous=graph.edges.find(e=>e.to==='output'&&e.port==='base')?.from??'input',edges=graph.edges.filter(e=>e.to!=='output'||e.port!=='base');
  if(composite){const source=previous;
   for(const [from,to,port] of [[source,nodes[0].id,'base'],[nodes[1].id,nodes[2].id,'base'],[nodes[0].id,nodes[2].id,'mask'],[nodes[2].id,nodes[3].id,'base'],[nodes[3].id,nodes[4].id,'base'],[nodes[4].id,nodes[5].id,'base'],[nodes[5].id,nodes[6].id,'base'],[source,nodes[6].id,'mask']])edges.push({from,to,port});previous=nodes[6].id;
  }else for(const n of nodes){edges.push({from:previous,to:n.id,port:'base'});previous=n.id;}

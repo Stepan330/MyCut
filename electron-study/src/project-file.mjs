@@ -24,6 +24,9 @@ export function validateProject(value){
     if(!object(n)||!id(n.id)||ids.has(n.id)||typeof n.name!=='string'||n.name.length>1000||!['Text','Shape','Image','Background','Layer','Folder','Drawing'].includes(n.kind))fail('Invalid or duplicate scene object');ids.add(n.id);
     for(const key of ['x','y','sx','sy','rotation','width','height','fontSize','brushSize','strokeWidth','cornerRadius','sides','innerRadius','lineWidth','arrowHead','heartBulge','tailX','tailY','lineHeight','letterSpacing','brightness','contrast','saturation'])if(n[key]!==undefined&&!finite(n[key]))fail('Invalid numeric object parameter');
     for(const key of ['x','y','sx','sy','rotation'])if(!finite(n[key]))fail('Missing object transform');
+    if(n.selectionDepthLocked!==undefined&&typeof n.selectionDepthLocked!=='boolean')fail('Invalid selection depth lock');
+    if(n.selectionThreshold!==undefined&&!finite(n.selectionThreshold,0,254))fail('Invalid selection alpha threshold');
+    if(n.primaryEditTarget!==undefined&&(typeof n.primaryEditTarget!=='string'||!graphFor(n).nodes.some(v=>v.id===n.primaryEditTarget)))fail('Invalid primary edit target');
     if(n.objectEffects!==undefined||n.exposedParameters!==undefined)validateObjectEffects(n);
     if(n.outlineBasis!==undefined&&(!Array.isArray(n.outlineBasis)||n.outlineBasis.length!==2||n.outlineBasis.some(v=>!finite(v,1e-8,1e7))))fail('Invalid outline scale basis');
     for(const [key,choices] of Object.entries({shape:shapeTypes,strokeStyle:['Solid','Dashed','Dotted'],textType:['Point','Paragraph'],fontStyle:['normal','italic'],textAlign:['left','center','right']}))if(n[key]!==undefined&&!choices.includes(n[key]))fail('Invalid object option');

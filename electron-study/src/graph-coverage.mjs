@@ -1,3 +1,4 @@
+import {imageGeneratorTypes} from './generator-nodes.mjs';
 import {expandedEdges} from './parameter-graph.mjs';
 import {graphFor} from './graph-model.mjs';
 import {compositionDomain} from './generator-domain.mjs';
@@ -11,7 +12,7 @@ export function graphCoverageBox(item,inputBox,world,sourceBox){
  const visit=id=>{if(cache.has(id))return cache.get(id);const n=nodes.get(id);if(!n)return null;const base=port=>visit(graph.edges.find(e=>e.to===id&&e.port===port)?.from);let box;
   if(n.enabled===false)box=base('base');else if(n.type==='Input')box=inputBox;
   else if(n.type==='Function')box=visit(n.output);
-  else if(['Gradient','SolidColor'].includes(n.type))box=compositionDomain(world);
+  else if(imageGeneratorTypes.includes(n.type))box=compositionDomain(world);
   else if(n.type==='RectangleMask')box={x:n.params?.x??0,y:n.params?.y??0,width:n.params?.width??300,height:n.params?.height??200};
   else if(n.type==='BitmapMask')box=n.params.bounds??{x:n.params.x??0,y:n.params.y??0,width:n.params.width,height:n.params.height};
   else if(['Paint_Mask','NodeInput'].includes(n.type))box=sourceBox(n);

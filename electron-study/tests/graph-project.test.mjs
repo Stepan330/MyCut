@@ -15,11 +15,11 @@ test('connections replace one input, support fanout, reject cycles and invalid e
   const a=connectGraph(fanout,'custom','paint-op-0','base');assert.equal(connectGraph(a,'paint-op-0','custom','base'),a);
 });
 test('disconnect/delete do not silently reconnect, mandatory nodes protected, removed sources stay removed',()=>{
-  const g=defaultGraph({paint:[{}]});const disconnected=disconnectGraph(g,'output','base');assert.ok(!graphFor({paint:[{}],graph:disconnected}).edges.some(e=>e.to==='output'));
+  const g=defaultGraph({paint:[{}]});const disconnected=disconnectGraph(g,'output','base');assert.ok(!graphFor({paint:[{}],graph:disconnected}).edges.some(e=>e.to==='output'&&e.port==='base'));
   const removed=removeGraphNode(g,'paint-0');assert.ok(!graphFor({paint:[{}],graph:removed}).nodes.some(n=>n.id==='paint-0'));assert.equal(removeGraphNode(g,'input'),g);assert.equal(removeGraphNode(g,'output'),g);
 });
 test('new brush masks extend custom graphs without moving existing nodes or losing wiring',()=>{
-  const g=defaultGraph({paint:[{}]});g.nodes[0].x=777;assert.equal(graphFor({paint:[{}],graph:g}).nodes[0].x,777,'no new nodes: manual layout remains');const next=graphFor({paint:[{},{}],graph:g});assert.equal(next.nodes.find(n=>n.id==='input').x,777);assert.ok(next.nodes.some(n=>n.id==='paint-1'));assert.equal(next.edges.find(e=>e.to==='output').from,'paint-op-1');validateGraph(next);
+  const g=defaultGraph({paint:[{}]});g.nodes[0].x=777;assert.equal(graphFor({paint:[{}],graph:g}).nodes[0].x,777,'no new nodes: manual layout remains');const next=graphFor({paint:[{},{}],graph:g});assert.equal(next.nodes.find(n=>n.id==='input').x,777);assert.ok(next.nodes.some(n=>n.id==='paint-1'));assert.equal(next.edges.find(e=>e.to==='output'&&e.port==='base').from,'paint-op-1');validateGraph(next);
 });
 test('automatic DAG layout separates every card, follows dependencies and is deterministic',()=>{
   let g=defaultGraph({paint:[{},{}],nodeInputs:[{sourceId:'child',operation:'Add'}]});g=addGraphOperation(g,'Subtract','loose');const result=arrangeGraph(g);assert.deepEqual(arrangeGraph(result),result);assert.deepEqual(result.edges,g.edges);for(const a of result.nodes)for(const b of result.nodes)if(a!==b)assert.ok(a.x+150+40<=b.x||b.x+150+40<=a.x||a.y+105+40<=b.y||b.y+105+40<=a.y);for(const e of result.edges)assert.ok(result.nodes.find(n=>n.id===e.from).x<result.nodes.find(n=>n.id===e.to).x);validateGraph(result);
@@ -28,7 +28,7 @@ test('graph rendering complexity is bounded even for acyclic exponential fanout'
   const g=defaultGraph({});let last='input';g.edges=[];for(let i=0;i<15;i++){const id='node-'+i;g.nodes.push({id,type:'Add',x:0,y:0});g.edges.push({from:last,to:id,port:'base'},{from:last,to:id,port:'mask'});last=id;}g.edges.push({from:last,to:'output',port:'base'});assert.throws(()=>validateGraph(g),/complexity/);
 });
 test('disconnected graph branches do not leave phantom transformation bounds',()=>{
-  const node={id:'layer',name:'Layer',kind:'Layer',x:0,y:0,sx:1,sy:1,rotation:0,paint:[{size:10,points:[{x:20,y:20}]}]};node.graph=defaultGraph(node);assert.equal(ownBox(node).width,10);node.graph=connectGraph(node.graph,'input','output','base');assert.equal(ownBox(node),null);
+  const node={id:'layer',name:'Layer',kind:'Layer',x:0,y:0,sx:1,sy:1,rotation:0,paint:[{size:10,points:[{x:20,y:20}]}]};node.graph=defaultGraph(node);assert.equal(ownBox(node).width,10);node.graph=connectGraph(node.graph,'input','output','base');assert.equal(ownBox(node),null);assert.equal(selectionBoxes([node]).get('layer').width,10,'explicit Geometry still has the paint source');node.graph=connectGraph(connectGraph(node.graph,'input','output','geometry'),'input','output','selection');
   const source={id:'child',name:'Source',kind:'Shape',parentId:'layer',x:80,y:80,sx:1,sy:1,rotation:0,width:20,height:20};node.nodeInputs=[{sourceId:'child',operation:'Subtract'}];assert.equal(selectionBoxes([node,source]).get('layer'),null);node.nodeInputs[0].operation='Add';node.graph=defaultGraph(node);assert.ok(selectionBoxes([node,source]).get('layer').width>=20);
 });
 test('project roundtrip preserves scene, embedded resources, viewport, tool settings and graph wiring',()=>{

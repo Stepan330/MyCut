@@ -84,6 +84,7 @@ export function useFunctionalTools({svg,host,tool,values,items,selected,change,o
   });
   return {
     maskEditing:!!maskEditing,
+    hitTest:e=>{if(values.mode!=='Edit'||!effect||!frame)return false;if(maskEditing){if(maskGizmo.hitTest(e))return true;const p=transformPoint(inverse(frame),point(e));return p.x>=params.x&&p.x<=params.x+params.width&&p.y>=params.y&&p.y<=params.y+params.height;}return !!pickHandle(e);},
     selectionImage:()=>{const mask=currentSelection();return mask?maskCanvas(mask).toDataURL():null;},
     down:e=>{if(e.button!==0||space.current||!ids.has(tool.id)||e.target.closest('textarea,.canvas-text-editor'))return false;if(maskEditing){maskDown(e);return true;}if(!(tool.id==='fill'&&values.mode==='Edit')&&editDown(e))return true;e.preventDefault();e.stopPropagation();host.current.focus({preventScroll:true});host.current.setPointerCapture(e.pointerId);const c={...cfg.current,values:{...cfg.current.values}};c.tool.begin(context(c,e),point(e),e);return true;},
     move:e=>{if(maskEditing){if(e.buttons&~1||space.current)return false;maskGizmo.bind.onPointerMove(e);return e.buttons===1;}pickHandle(e);if(editMove(e))return true;const g=gesture.current;if(!g)return false;e.stopPropagation();g.c.tool.move(context(g.c,e),point(e),e);return true;},

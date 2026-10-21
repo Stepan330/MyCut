@@ -1,6 +1,6 @@
 # MyCut — Electron / React UI study
 
-Отдельный рабочий экран для сравнения со стартовым Rust/egui UI. **Не миграция редактора и не полноценная копия Unreal.** Никакие файлы проектов не открываются и не изменяются.
+Рабочая Electron/React-ветка редактора MyCut: объектная сцена, Node Graph, эффекты, собственные файлы проектов и ресурсы. Нативная Rust/egui-ветка не переписывается. Экспериментальные архитектурные системы проверяются отдельно в Architecture Lab, не заменяя действующий интерфейс.
 
 Стек: Electron 44.8.0, React/React DOM 19.3.1, HTML/CSS, esbuild. Node.js >=22.12, pnpm; версии и дерево закреплены в `pnpm-lock.yaml`.
 
@@ -650,3 +650,15 @@ SVG-примитивами по [спецификации W3C](https://www.w3.or
 Проверки сценариев: tests/effect-workflow-ui.mjs, tests/effect-details-ui.mjs,
 tests/effect-workflow.test.mjs. Текстовые строки названия ноды, портов и объекта
 разделены независимыми областями, длинные названия сокращаются с подсказкой.
+
+## Architecture Lab и MASTER SPEC v0.3
+
+Открыть: **Window → Architecture Lab** или **Ctrl+K → Architecture Lab**.
+
+Вкладки: Living UI, Animation, Canvas & Glass, Definitions, Diagnostics. Лабораторные миры и история изолированы от открытого проекта; закрытие окна не переносит их изменения в документ.
+
+Living UI следует четырём стихиям и виду сверху: X/Y — плоскость, гравитация — глубина Z. Доступны Lift/Press, Hard/Soft/Effects, диффузная пыль по контуру, материальные behavior-графы, процедурный камень, Safe UI и сброс. Value/Perlin/Worley/Fractal Noise также доступны как обычные ноды основного редактора.
+
+Состояние внедрения и оставшиеся пункты: [SPEC_IMPLEMENTATION.md](docs/SPEC_IMPLEMENTATION.md). Правила мира и материалов: [LIVING_UI_MATERIALS.md](docs/LIVING_UI_MATERIALS.md). Пользовательская модель редактора: [EDITOR_LOGIC.md](../EDITOR_LOGIC.md).
+
+Новые проверки: tests/spec-interaction-ui.mjs, tests/architecture-lab-ui.mjs, tests/noise-generators-ui.mjs; unit-тесты запускаются через npm test. Полная MASTER SPEC пока не реализована: статус каждого крупного направления указан в карте внедрения.

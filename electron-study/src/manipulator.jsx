@@ -100,7 +100,7 @@ export function useManipulator(config){
   useEffect(()=>{
     const keys=e=>{
       if(drag.current&&commandForKey(e)==='undo'){e.preventDefault();e.stopImmediatePropagation();cancelDrag();return;}
-      if(e.key==='Escape'){cancelDrag();return;}
+      if(e.key==='Escape'){if(drag.current){e.preventDefault();e.stopImmediatePropagation();cancelDrag();}return;}
       if(drag.current&&pointer.current&&['Shift','Alt','Control'].includes(e.key))resize({...pointer.current,clientX:pointer.current.x,clientY:pointer.current.y,shiftKey:e.shiftKey,altKey:e.altKey,ctrlKey:e.ctrlKey});
     };
     const blur=()=>{pointer.current=null;cancelDrag();};
@@ -135,7 +135,7 @@ export function useManipulator(config){
     onPointerUp:()=>{hideGrid();if(drag.current){const d=drag.current;clearTransfer();drag.current=null;if(d.overPanel){cfg.current.cancel();const graph=d.overPanel.querySelector('.effects-graph');if(graph?.getClientRects().length)graph.dispatchEvent(new CustomEvent('mycut-canvas-reference',{detail:{id:d.item.id}}));}else {cfg.current.finish();if(d.type==='move'&&!d.moved)cfg.current.onClickItem?.(d.item);}schedule();}},
     onPointerCancel:cancelDrag,onLostPointerCapture:cancelDrag,
   };
-  return {bind,startMove:(e,item)=>{cfg.current.select(item.id);if(!item.locked)start(e,item);else e.stopPropagation();},
+  return {bind,hitTest:event=>{const previous=pointer.current;pointer.current={x:event.clientX,y:event.clientY};try{const points=geometry(),radii=zones.current.extra.map(x=>cfg.current.settings.base+x);return !!(nearest(points,radii)||rotationHit(ringFor(points),radii[8]));}finally{pointer.current=previous;}},startMove:(e,item)=>{cfg.current.select(item.id);if(!item.locked)start(e,item);else e.stopPropagation();},
     overlay:<g className="transform-overlay" pointerEvents="none"><SnapGrid value={snapGrid} animations={config.animations}/>
       <g data-rotation-ring="true" data-screen-x={ringFor(points)?.center.x} data-screen-y={ringFor(points)?.center.y} data-screen-radius={ringFor(points)?.radius}>{ringLines.map((line,i)=><line key={i} x1={line.a.x} y1={line.a.y} x2={line.b.x} y2={line.b.y} stroke="white" strokeOpacity={line.opacity} strokeWidth="1.2" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>)}</g>
       {overlay&&<circle data-zone={overlay.type} cx={overlay.x} cy={overlay.y} r={overlay.radius} fill="#39d3df" fillOpacity={overlay.opacity} stroke="#39d3df" strokeOpacity={overlay.opacity*2} vectorEffect="non-scaling-stroke"/>}

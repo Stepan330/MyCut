@@ -5,7 +5,7 @@ export const lastEffect=(item,type)=>[...(item?.graph?.nodes??[])].reverse().fin
 export function appendEffect(item,nodes,edges,{output=nodes.at(-1).id}={}){
  const graph=graphFor(item),base=graph.edges.find(e=>e.to==='output'&&e.port==='base')?.from??'input';
  const bottom=Math.max(0,...graph.nodes.map(n=>n.y+400));const placed=arrangeGraph({nodes,edges:edges.filter(e=>e.from!=='$base')}).nodes.map(n=>({...n,y:n.y+bottom}));
- return validateGraph(arrangeGraph({...graph,nodes:[...graph.nodes,...placed],edges:[...graph.edges.filter(e=>e.to!=='output'),...edges.map(e=>({...e,from:e.from==='$base'?base:e.from})),{from:output,to:'output',port:'base'}]},true));
+ return validateGraph(arrangeGraph({...graph,nodes:[...graph.nodes,...placed],edges:[...graph.edges.filter(e=>e.to!=='output'||e.port!=='base'),...edges.map(e=>({...e,from:e.from==='$base'?base:e.from})),{from:output,to:'output',port:'base'}]},true));
 }
 export function createGradient(item,params,{empty=false}={}){
  const id=crypto.randomUUID(),mask=crypto.randomUUID(),multiply=crypto.randomUUID(),nodes=[{id,type:'Gradient',x:0,y:0,params}];

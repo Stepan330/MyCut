@@ -4,6 +4,8 @@ import {ClippedStroke} from './clipped-stroke.jsx';
 import {LiveRetouch} from './live-retouch.jsx';
 import {maskTypes,maskLocalTransform,graphTransform} from './mask-space.mjs';
 import {compositionDomain} from './generator-domain.mjs';
+import {NoiseArtwork} from './noise-artwork.jsx';
+import {noiseTypes} from './procedural-noise.mjs';
 import {nodeDefaults} from './generator-nodes.mjs';
 import {filterTypes} from './filter-nodes.mjs';
 import {FilterPrimitives} from './filter-artwork.jsx';
@@ -92,6 +94,7 @@ function GraphOutput({item,w,h,items,evaluated,children,displayNode,animations})
     else if(node.type==='Paint_Mask'){const stroke=item[node.channel]?.[node.index];if(stroke)content=<StrokeArtwork stroke={stroke} colorOverride={node.channel==='erasures'?'black':undefined}/>;}
     else if(node.type==='NodeInput'){const signal=item.nodeInputs?.[node.index];if(signal)content=<SignalArtwork owner={item} signal={signal} items={items} evaluated={evaluated}/>;}
     else if(node.type==='Gradient'){const p={...nodeDefaults('Gradient'),...node.params},gid=id(node.id)+':gradient',stops=[...p.stops].sort((a,b)=>a.offset-b.offset);content=<><defs>{p.gradientType==='Radial'?<radialGradient id={gid} gradientUnits="userSpaceOnUse" cx={p.x1} cy={p.y1} r={Math.max(.001,Math.hypot(p.x2-p.x1,p.y2-p.y1))}>{stops.map((s,i)=><stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity??1}/>)}</radialGradient>:<linearGradient id={gid} gradientUnits="userSpaceOnUse" x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2}>{stops.map((s,i)=><stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity??1}/>)}</linearGradient>}</defs><rect {...domain} fill={`url(#${gid})`}/></>;}
+    else if(noiseTypes.includes(node.type))content=<NoiseArtwork node={node} region={domain}/>;
     else if(node.type==='SolidColor')content=<rect {...domain} fill={node.params.color}/>;
     else if(node.type==='RectangleMask'){const p={...nodeDefaults(node.type),...node.params};content=<rect x={p.x} y={p.y} width={p.width} height={p.height} fill="white"/>;}
     else if(node.type==='BitmapMask')content=<image href={node.params.src} x={node.params.x??0} y={node.params.y??0} width={node.params.width} height={node.params.height}/>;
@@ -182,7 +185,7 @@ export function useCanvasTools({selectionImage,svg,host,tool,values,items,select
   useEffect(()=>{if(gesture.current)stop();},[tool.id]);
   useEffect(()=>{if(editing&&(selected!==editing||!items.some(n=>n.id===editing)||tool.id!=='text'&&tool.id!=='select'))endText();},[tool.id,items,editing,selected]);
   const edited=items.find(n=>n.id===editing),frame=edited&&evaluateScene(items).get(editing).world;
-  return {editing,zoomAt,
+  return {editing,zoomAt,endEditing:()=>endText(),
     emptyDown:e=>{
       const c=cfg.current;if(e.button!==0||c.tool.id!=='shape'||c.values.mode!=='Edit')return false;
       const picked=e.target.closest('[data-pick-object],[data-object]'),id=picked?.getAttribute('data-pick-object')??picked?.getAttribute('data-object'),hit=c.items.find(n=>n.id===id);

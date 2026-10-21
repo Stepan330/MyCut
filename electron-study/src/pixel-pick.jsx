@@ -3,6 +3,7 @@ import {nodeImage} from './node-image.mjs';
 import {pixelBoundsKey} from './pixel-bounds-key.mjs';
 import {inverse,transformPoint} from './scene-transform.mjs';
 import {bounds} from './model.mjs';
+import {interactionSource} from './output-contract.mjs';
 import {alphaHit} from './pixel-pick.mjs';
 
 // SVG hit testing ignores mask/filter transparency. Cache final branch alpha,
@@ -10,7 +11,7 @@ import {alphaHit} from './pixel-pick.mjs';
 export function usePixelPick(items,evaluated,previewOwner,previewNode){
  const cache=useRef(new Map());
  const entries=items.filter(n=>n.graph||n.kind==='Image'&&n.src).map(owner=>{
-  const node=owner.id===previewOwner?previewNode??'output':'output';
+  const node=interactionSource(owner,'selection',owner.id===previewOwner?previewNode:null);
   return {owner,node,key:pixelBoundsKey(owner,evaluated.get(owner.id)?.world,node,items)};
  });
  const signature=JSON.stringify(entries.map(e=>[e.owner.id,e.key]));
@@ -35,7 +36,7 @@ export function usePixelPick(items,evaluated,previewOwner,previewNode){
   if(!owner||state?.opacity===0)return false;
   const entry=entries.find(e=>e.owner.id===id);if(!entry)return true;
   const sample=cache.current.get(id);
-  if(sample?.key===entry.key)return alphaHit(sample.alpha,960,600,point);
+  if(sample?.key===entry.key)return alphaHit(sample.alpha,960,600,point,owner.selectionThreshold??0);
   // Never let a pending full-composition filter rectangle steal all canvas clicks.
   const inv=state?.world&&inverse(state.world);if(!inv)return false;
   const p=transformPoint(inv,point),[w,h]=bounds(owner);

@@ -3,10 +3,10 @@ import {maskTypes} from './mask-space.mjs';
 import {effectNodes} from './effect-graph.mjs';
 import {graphOperations} from './blend-modes.mjs';
 import {filterTypes,validateFilterParams} from './filter-nodes.mjs';
-import {generatorTypes,nodeSpec,nodeDefaults,validNodeValue,validateGenerator} from './generator-nodes.mjs';
+import {imageGeneratorTypes,generatorTypes,nodeSpec,nodeDefaults,validNodeValue,validateGenerator} from './generator-nodes.mjs';
 export const graphTypes=['Input','Output','Function','Paint_Mask','NodeInput',...graphOperations,...filterTypes,...generatorTypes];
 export const parameterPorts=node=>isParameter(node)||node.type==='Function'?[]:(nodeSpec(node.type)?.parameters??[]).map(p=>'param:'+p.id);
-export const inputPorts=node=>node.type==='Function'?(node.inputs??[]).map(p=>p.port):['AlphaMultiply','Crop'].includes(node.type)?['base','mask']:['ConvertToAlphaMask','RasterEffect','ColorRange','Transform'].includes(node.type)?['base']:generatorTypes.includes(node.type)?[]:node.type==='Output'||filterTypes.includes(node.type)?['base']:graphOperations.includes(node.type)?['base','mask']:[];
+export const inputPorts=node=>node.type==='Function'?(node.inputs??[]).map(p=>p.port):['AlphaMultiply','Crop'].includes(node.type)?['base','mask']:['ConvertToAlphaMask','RasterEffect','ColorRange','Transform'].includes(node.type)?['base']:generatorTypes.includes(node.type)?[]:node.type==='Output'?['base','selection','geometry']:filterTypes.includes(node.type)?['base']:graphOperations.includes(node.type)?['base','mask']:[];
 export const hasOutput=node=>node.type!=='Output';
 // Stable layered DAG layout. Columns follow dependency depth; rows reserve the
 // entire card plus a gap, including disconnected nodes and shared sources.
@@ -21,14 +21,14 @@ export function arrangeGraph(graph,anchorInput=false){
 export function defaultGraph(item){
   const nodes=effectNodes(item).map(n=>({...n,x:40,y:110})),edges=[];let previous='input',column=1;
   for(let i=1;i<nodes.length-1;i+=2){const op=nodes[i],source=nodes[i+1];op.x=column*210+40;source.x=op.x;source.y=300;edges.push({from:previous,to:op.id,port:'base'},{from:source.id,to:op.id,port:'mask'});previous=op.id;column++;}
-  nodes.at(-1).x=column*210+40;edges.push({from:previous,to:'output',port:'base'});return arrangeGraph({version:1,nodes,edges,removed:[]});
+  nodes.at(-1).x=column*210+40;edges.push({from:previous,to:'output',port:'base'},{from:previous,to:'output',port:'selection'},{from:previous,to:'output',port:'geometry'});return arrangeGraph({version:1,nodes,edges,removed:[]});
 }
 export function graphFor(item){
   const defaults=defaultGraph(item);if(!item?.graph)return defaults;
   const saved=item.graph,metadata=new Map(defaults.nodes.map(n=>[n.id,n])),removed=new Set(saved.removed??[]),nodes=saved.nodes.filter(n=>!removed.has(n.id)).map(n=>({...n,...(metadata.has(n.id)?{...metadata.get(n.id),...(graphOperations.includes(n.type)&&graphOperations.includes(metadata.get(n.id).type)?{type:n.type}:{}),x:n.x,y:n.y}:null)}));
   const ids=new Set(nodes.map(n=>n.id)),edges=saved.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
   for(let i=1;i<defaults.nodes.length-1;i+=2){const op=defaults.nodes[i],source=defaults.nodes[i+1];if(ids.has(op.id)||removed.has(op.id)||removed.has(source.id))continue;
-    const output=edges.find(e=>e.to==='output'),base=output?.from??'input';if(output)edges.splice(edges.indexOf(output),1);const bottom=Math.max(0,...nodes.map(n=>n.y+nodeCardHeight(n)+40));nodes.push({...op,x:40,y:bottom},{...source,x:330,y:bottom});ids.add(op.id);ids.add(source.id);edges.push({from:base,to:op.id,port:'base'},{from:source.id,to:op.id,port:'mask'},{from:op.id,to:'output',port:'base'});
+    const output=edges.find(e=>e.to==='output'&&e.port==='base'),base=output?.from??'input';if(output)edges.splice(edges.indexOf(output),1);const bottom=Math.max(0,...nodes.map(n=>n.y+nodeCardHeight(n)+40));nodes.push({...op,x:40,y:bottom},{...source,x:330,y:bottom});ids.add(op.id);ids.add(source.id);edges.push({from:base,to:op.id,port:'base'},{from:source.id,to:op.id,port:'mask'},{from:op.id,to:'output',port:'base'});
   }
   return resolveParameters({version:1,nodes,edges,removed:[...removed]});
 }
@@ -51,4 +51,4 @@ export function setGraphParameter(graph,id,key,value){const wire=graph.edges.fin
 export function changeGraphOperation(graph,id,type){if(!graphOperations.includes(type)||!graph.nodes.some(n=>n.id===id&&graphOperations.includes(n.type)))return graph;return validateGraph({...graph,nodes:graph.nodes.map(n=>n.id===id?{...n,type}:n)});}
 // Sources contributing positive pixels. Subtraction can trim bounds but must
 // never enlarge them; disconnected branches have no visible contribution.
-export function positiveGraphSources(item){const graph=graphFor(item);graph.edges=expandedEdges(graph);const nodes=new Map(graph.nodes.map(n=>[n.id,n])),result=new Set(),visited=new Set();function visit(id){if(visited.has(id))return;visited.add(id);const node=nodes.get(id);if(!node)return;if(node.type==='Function'&&node.enabled!==false){visit(node.output);return;}if(['Input','Paint_Mask','NodeInput','Gradient','RectangleMask','BitmapMask','SolidColor'].includes(node.type)){result.add(id);return;}for(const e of graph.edges.filter(e=>e.to===id&&(node.type!=='Subtract'||e.port==='base')))visit(e.from);}visit('output');return result;}
+export function positiveGraphSources(item){const graph=graphFor(item);graph.edges=expandedEdges(graph).filter(e=>e.to!=='output'||e.port==='base');const nodes=new Map(graph.nodes.map(n=>[n.id,n])),result=new Set(),visited=new Set();function visit(id){if(visited.has(id))return;visited.add(id);const node=nodes.get(id);if(!node)return;if(node.type==='Function'&&node.enabled!==false){visit(node.output);return;}if(['Input','Paint_Mask','NodeInput','RectangleMask','BitmapMask',...imageGeneratorTypes].includes(node.type)){result.add(id);return;}for(const e of graph.edges.filter(e=>e.to===id&&(node.type!=='Subtract'||e.port==='base')))visit(e.from);}visit('output');return result;}

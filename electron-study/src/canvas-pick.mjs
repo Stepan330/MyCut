@@ -10,7 +10,7 @@ export class CanvasPick {
     if(!chain.length)return null;
     const selectedIndex=chain.indexOf(selectedId);
     const repeat=!this.last?.moved&&this.last?.target===selectedId&&this.last?.hitId===hitId&&Math.hypot(point.x-this.last.x,point.y-this.last.y)<=4;
-    const index=repeat?Math.min(selectedIndex+1,chain.length-1):Math.max(0,selectedIndex),target=chain[index];
+    const locked=chain.findIndex(id=>map.get(id)?.selectionDepthLocked),index=Math.min(locked<0?chain.length-1:locked,repeat?Math.min(selectedIndex+1,chain.length-1):Math.max(0,selectedIndex)),target=chain[index];
     this.last={...point,hitId,index,target};return target;
   }
 }
